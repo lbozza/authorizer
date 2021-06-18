@@ -1,4 +1,4 @@
-#Authorizer
+# Authorizer
 
 Authorizer is an application designed and developed to authorize credit-card transactions, based on  a number of business rules, such as:
   
@@ -8,11 +8,11 @@ Authorizer is an application designed and developed to authorize credit-card tra
   - Multiple transactions in a short period of time
   
   
-###Running
+### Running
 
 To run this application you should have go 1.13+ installed or docker
 
-####With docker
+#### With docker
 
 Build the application
 
@@ -22,7 +22,7 @@ Run the application
 
 ```make docker-run < scenarios/{testFile}.txt ```
 
-####Locally with golang
+#### Locally with golang
 
 Install dependencies
 
@@ -38,11 +38,11 @@ Run the application
 
 The scenarios folder has a number of possible scenarios to be processed against the application
 
-###Tests
+### Tests
 
 The application has unit tests that are responsible for testing every layer of the application, such as processor, usecase and rules, the business rules have 100% of coverage of tests,meaning that all the scenarios are covered by unit tests.
 
-####Running tests
+#### Running tests
 To run the tests you must have golang 1.13+ installed on your computer
 
 Running tests
