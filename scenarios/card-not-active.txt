@@ -1,0 +1,2 @@
+{"account": {"active-card": false, "available-limit": 100}}
+{"transaction": {"merchant": "Burger King", "amount": 100, "time": "2020-02-13T10:00:00.000Z"}}

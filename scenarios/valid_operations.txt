@@ -1,0 +1,4 @@
+{"account": {"active-card": true, "available-limit": 500}}
+{"transaction": {"merchant": "Burger King", "amount": 20, "time": "2020-02-13T10:00:00.000Z"}}
+{"transaction": {"merchant": "Pizza Hut", "amount": 60, "time": "2020-02-14T10:00:00.000Z"}}
+{"transaction": {"merchant": "Extra Supermercados", "amount": 200, "time": "2020-02-15T10:00:00.000Z"}}
