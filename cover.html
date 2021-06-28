@@ -260,6 +260,7 @@ func getOperationType(operation processor.Input) int <span class="cov8" title="1
 
 import (
         "authorizer/entity"
+        "authorizer/entity/violations"
         "authorizer/usecase/rules"
         "errors"
 )
@@ -272,19 +273,19 @@ type Manager interface {
 
 type OperationManager struct {
         initialAccount *entity.Account
-        trx      []entity.Transaction
+        trx            []entity.Transaction
 }
 
 func NewOperationManager() *OperationManager <span class="cov8" title="1">{
         return &amp;OperationManager{
-                trx:      []entity.Transaction{},
+                trx: []entity.Transaction{},
         }
 }</span>
 
 func (m *OperationManager) CreateAccount(account entity.Account) (*entity.Account, error) <span class="cov8" title="1">{
 
         if m.initialAccount != nil </span><span class="cov8" title="1">{
-                return m.initialAccount, errors.New("account-already-initialized")
+                return m.initialAccount, violations.ErrAccountAlreadyInitialized
         }</span>
         <span class="cov8" title="1">m.initialAccount = &amp;account
 
@@ -297,11 +298,11 @@ func (m *OperationManager) ProcessTransaction(transaction entity.Transaction) (*
         }</span>
 
         <span class="cov8" title="1">if !m.initialAccount.ActiveCard </span><span class="cov8" title="1">{
-                return m.initialAccount, errors.New("card-not-active")
+                return m.initialAccount, violations.ErrCardNotActive
         }</span>
 
         <span class="cov8" title="1">if !m.validateLimit(transaction) </span><span class="cov8" title="1">{
-                return m.initialAccount, errors.New("insufficient-limit")
+                return m.initialAccount, violations.ErrInsufficientLiit
         }</span>
 
         <span class="cov8" title="1">rules := rules.NewRules()
@@ -398,7 +399,7 @@ func (mr *MockManagerMockRecorder) ProcessTransaction(arg0 interface{}) *gomock.
 
 import (
         "authorizer/entity"
-        "errors"
+        "authorizer/entity/violations"
         "strings"
         "time"
 )
@@ -419,7 +420,7 @@ func (d *DoubleTransactionRule) Authorize(trx []entity.Transaction, transaction 
                 if strings.Compare(o.Merchant, transaction.Merchant) == 0 </span><span class="cov8" title="1">{
                         duration := transaction.Time.Sub(o.Time)
                         if duration &lt; timeLimit </span><span class="cov8" title="1">{
-                                return errors.New("double-transaction")
+                                return violations.ErrDoubleTransaction
                         }</span>
                 }
         }
@@ -432,7 +433,7 @@ func (d *DoubleTransactionRule) Authorize(trx []entity.Transaction, transaction 
 
 import (
         "authorizer/entity"
-        "errors"
+        "authorizer/entity/violations"
 )
 
 type HighFrequencySmallIntervalRule struct {
@@ -450,7 +451,7 @@ func (d *HighFrequencySmallIntervalRule) Authorize(trx []entity.Transaction, tra
                 timeDiff := transaction.Time.Sub(trx[sizeList-3].Time)
 
                 if timeDiff &lt; timeLimit </span><span class="cov8" title="1">{
-                        return errors.New("high-frequency-small-interval")
+                        return violations.ErrHighFrequencySmallInterval
                 }</span>
         }
 
