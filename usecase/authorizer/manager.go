@@ -10,6 +10,7 @@ import (
 type Manager interface {
 	CreateAccount(account entity.Account) (*entity.Account, error)
 	ProcessTransaction(transaction entity.Transaction) (*entity.Account, error)
+	CreateDenyList(denyList []string) (*entity.Account, error)
 }
 
 type OperationManager struct {
@@ -28,13 +29,14 @@ func (m *OperationManager) CreateAccount(account entity.Account) (*entity.Accoun
 	if m.initialAccount != nil {
 		return m.initialAccount, errors.New("account-already-initialized")
 	}
+
 	m.initialAccount = &account
 
 	return m.initialAccount, nil
 }
 
 func (m *OperationManager) ProcessTransaction(transaction entity.Transaction) (*entity.Account, error) {
-	if m.initialAccount == nil {
+	if !m.validateAccountState() {
 		return nil, errors.New("account-not-initialized")
 	}
 
@@ -48,7 +50,7 @@ func (m *OperationManager) ProcessTransaction(transaction entity.Transaction) (*
 
 	rules := rules.NewRules()
 
-	err := rules.Authorize(&transaction, m.trx)
+	err := rules.Authorize(&transaction, m.trx, m.initialAccount.DenyList)
 	if err != nil {
 		return m.initialAccount, err
 	}
@@ -58,10 +60,28 @@ func (m *OperationManager) ProcessTransaction(transaction entity.Transaction) (*
 	return m.initialAccount, nil
 }
 
+func (m *OperationManager) CreateDenyList(denyList []string) (*entity.Account, error) {
+	if !m.validateAccountState() {
+		return m.initialAccount, errors.New("account-not-initialized")
+	}
+
+	m.initialAccount.DenyList = denyList
+
+	return m.initialAccount, nil
+}
+
 func (m *OperationManager) validateLimit(transaction entity.Transaction) bool {
 	account := m.initialAccount
 
 	if account.AvaliableLimit < transaction.Amount {
+		return false
+	}
+
+	return true
+}
+
+func (m *OperationManager) validateAccountState() bool{
+	if m.initialAccount == nil {
 		return false
 	}
 

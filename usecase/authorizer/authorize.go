@@ -13,6 +13,7 @@ type AuthorizeHandler struct {
 const (
 	typeAccount     = 1
 	typeTransaction = 2
+	typeDenyList = 3
 )
 
 func NewAuthorizeHandler() *AuthorizeHandler {
@@ -29,6 +30,8 @@ func (a *AuthorizeHandler) Handle(input processor.Input) (output processor.Outpu
 		account, err = a.CreateAccount(*input.Account)
 	case typeTransaction:
 		account, err = a.ProcessTransaction(*input.Transaction)
+	case typeDenyList :
+		account, err = a.CreateDenyList(input.DenyList)
 	case 0:
 		return processor.Output{}, errors.New("invalid operation type")
 	}
@@ -45,12 +48,18 @@ func (a *AuthorizeHandler) Handle(input processor.Input) (output processor.Outpu
 func getOperationType(operation processor.Input) int {
 	isAccount := operation.Account != nil
 	isTransaction := operation.Transaction != nil
+	isDenyList := operation.DenyList != nil
 
-	if isAccount == false && isTransaction == false {
+	if isAccount == false && isTransaction == false  && isDenyList == false{
 		return 0
 	}
 	if isAccount {
 		return typeAccount
 	}
-	return typeTransaction
+
+	if isTransaction {
+		return typeTransaction
+	}
+
+	return typeDenyList
 }

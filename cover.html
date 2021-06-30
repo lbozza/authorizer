@@ -59,9 +59,9 @@
 				
 				<option value="file1">authorizer/processor/processor.go (92.3%)</option>
 				
-				<option value="file2">authorizer/usecase/authorizer/authorize.go (100.0%)</option>
+				<option value="file2">authorizer/usecase/authorizer/authorize.go (90.9%)</option>
 				
-				<option value="file3">authorizer/usecase/authorizer/manager.go (100.0%)</option>
+				<option value="file3">authorizer/usecase/authorizer/manager.go (96.6%)</option>
 				
 				<option value="file4">authorizer/usecase/authorizer/manager_mock.go (16.7%)</option>
 				
@@ -69,9 +69,11 @@
 				
 				<option value="file6">authorizer/usecase/rules/high_frequency_small_interval.go (100.0%)</option>
 				
-				<option value="file7">authorizer/usecase/rules/rule.go (100.0%)</option>
+				<option value="file7">authorizer/usecase/rules/merchant_deny_list.go (80.0%)</option>
 				
-				<option value="file8">authorizer/usecase/rules/rules.go (100.0%)</option>
+				<option value="file8">authorizer/usecase/rules/rule.go (90.9%)</option>
+				
+				<option value="file9">authorizer/usecase/rules/rules.go (100.0%)</option>
 				
 				</select>
 			</div>
@@ -148,6 +150,7 @@ import (
 type Input struct {
         Account     *entity.Account     `json:"account"`
         Transaction *entity.Transaction `json:"transaction"`
+        DenyList []string `json:"deny-list"`
 }
 
 type Output struct {
@@ -213,6 +216,7 @@ type AuthorizeHandler struct {
 const (
         typeAccount     = 1
         typeTransaction = 2
+        typeDenyList = 3
 )
 
 func NewAuthorizeHandler() *AuthorizeHandler <span class="cov8" title="1">{
@@ -229,6 +233,8 @@ func (a *AuthorizeHandler) Handle(input processor.Input) (output processor.Outpu
                 account, err = a.CreateAccount(*input.Account)</span>
         case typeTransaction:<span class="cov8" title="1">
                 account, err = a.ProcessTransaction(*input.Transaction)</span>
+        case typeDenyList :<span class="cov0" title="0">
+                account, err = a.CreateDenyList(input.DenyList)</span>
         case 0:<span class="cov8" title="1">
                 return processor.Output{}, errors.New("invalid operation type")</span>
         }
@@ -245,14 +251,20 @@ func (a *AuthorizeHandler) Handle(input processor.Input) (output processor.Outpu
 func getOperationType(operation processor.Input) int <span class="cov8" title="1">{
         isAccount := operation.Account != nil
         isTransaction := operation.Transaction != nil
+        isDenyList := operation.DenyList != nil
 
-        if isAccount == false &amp;&amp; isTransaction == false </span><span class="cov8" title="1">{
+        if isAccount == false &amp;&amp; isTransaction == false  &amp;&amp; isDenyList == false</span><span class="cov8" title="1">{
                 return 0
         }</span>
         <span class="cov8" title="1">if isAccount </span><span class="cov8" title="1">{
                 return typeAccount
         }</span>
-        <span class="cov8" title="1">return typeTransaction</span>
+
+        <span class="cov8" title="1">if isTransaction </span><span class="cov8" title="1">{
+                return typeTransaction
+        }</span>
+
+        <span class="cov0" title="0">return typeDenyList</span>
 }
 </pre>
 		
@@ -268,16 +280,17 @@ import (
 type Manager interface {
         CreateAccount(account entity.Account) (*entity.Account, error)
         ProcessTransaction(transaction entity.Transaction) (*entity.Account, error)
+        CreateDenyList(denyList []string) (*entity.Account, error)
 }
 
 type OperationManager struct {
         initialAccount *entity.Account
-        trx      []entity.Transaction
+        trx            []entity.Transaction
 }
 
 func NewOperationManager() *OperationManager <span class="cov8" title="1">{
         return &amp;OperationManager{
-                trx:      []entity.Transaction{},
+                trx: []entity.Transaction{},
         }
 }</span>
 
@@ -286,13 +299,14 @@ func (m *OperationManager) CreateAccount(account entity.Account) (*entity.Accoun
         if m.initialAccount != nil </span><span class="cov8" title="1">{
                 return m.initialAccount, errors.New("account-already-initialized")
         }</span>
+
         <span class="cov8" title="1">m.initialAccount = &amp;account
 
         return m.initialAccount, nil</span>
 }
 
 func (m *OperationManager) ProcessTransaction(transaction entity.Transaction) (*entity.Account, error) <span class="cov8" title="1">{
-        if m.initialAccount == nil </span><span class="cov8" title="1">{
+        if !m.validateAccountState() </span><span class="cov8" title="1">{
                 return nil, errors.New("account-not-initialized")
         }</span>
 
@@ -306,13 +320,23 @@ func (m *OperationManager) ProcessTransaction(transaction entity.Transaction) (*
 
         <span class="cov8" title="1">rules := rules.NewRules()
 
-        err := rules.Authorize(&amp;transaction, m.trx)
+        err := rules.Authorize(&amp;transaction, m.trx, m.initialAccount.DenyList)
         if err != nil </span><span class="cov8" title="1">{
                 return m.initialAccount, err
         }</span>
         <span class="cov8" title="1">m.trx = append(m.trx, transaction)
 
         m.initialAccount.AvaliableLimit -= transaction.Amount
+        return m.initialAccount, nil</span>
+}
+
+func (m *OperationManager) CreateDenyList(denyList []string) (*entity.Account, error) <span class="cov8" title="1">{
+        if !m.validateAccountState() </span><span class="cov0" title="0">{
+                return m.initialAccount, errors.New("account-not-initialized")
+        }</span>
+
+        <span class="cov8" title="1">m.initialAccount.DenyList = denyList
+
         return m.initialAccount, nil</span>
 }
 
@@ -325,7 +349,14 @@ func (m *OperationManager) validateLimit(transaction entity.Transaction) bool <s
 
         <span class="cov8" title="1">return true</span>
 }
-</pre>
+
+func (m *OperationManager) validateAccountState() bool<span class="cov8" title="1">{
+        if m.initialAccount == nil </span><span class="cov8" title="1">{
+                return false
+        }</span>
+
+        <span class="cov8" title="1">return true</span>
+}</pre>
 		
 		<pre class="file" id="file4" style="display: none">// Code generated by MockGen. DO NOT EDIT.
 // Source: authorizer/usecase/authorizer (interfaces: Manager)
@@ -462,13 +493,39 @@ func (d *HighFrequencySmallIntervalRule) Authorize(trx []entity.Transaction, tra
 
 import (
         "authorizer/entity"
+        "errors"
+        "strings"
+)
+
+type MerchantDenyList struct {
+
+}
+
+func NewMerchantDenyList() *MerchantDenyList <span class="cov8" title="1">{
+        return &amp;MerchantDenyList{}
+}</span>
+
+func (m *MerchantDenyList) Authorize(merchantDenyList []string, transaction *entity.Transaction) error <span class="cov8" title="1">{
+
+        for _, o := range merchantDenyList </span><span class="cov8" title="1">{
+                if strings.Compare(o, transaction.Merchant) == 0 </span><span class="cov0" title="0">{
+                        return errors.New("merchant-denied")
+                }</span>
+        }
+        <span class="cov8" title="1">return nil</span>
+}</pre>
+		
+		<pre class="file" id="file8" style="display: none">package rules
+
+import (
+        "authorizer/entity"
 )
 
 type Rules struct {
         rules *List
 }
 
-func (r *Rules) Authorize(transaction *entity.Transaction, trx []entity.Transaction) error <span class="cov8" title="1">{
+func (r *Rules) Authorize(transaction *entity.Transaction, trx []entity.Transaction, merchantDenyList []string) error <span class="cov8" title="1">{
         err := r.rules.DoubleTransactionRule.Authorize(trx, transaction)
 
         if err != nil </span><span class="cov8" title="1">{
@@ -478,6 +535,12 @@ func (r *Rules) Authorize(transaction *entity.Transaction, trx []entity.Transact
         <span class="cov8" title="1">err = r.rules.HighFrequencySmallIntervalRule.Authorize(trx, transaction)
 
         if err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">err = r.rules.MerchantDenyList.Authorize(merchantDenyList, transaction)
+
+        if err != nil </span><span class="cov0" title="0">{
                 return err
         }</span>
 
@@ -492,17 +555,19 @@ func NewRules() *Rules <span class="cov8" title="1">{
 }</span>
 </pre>
 		
-		<pre class="file" id="file8" style="display: none">package rules
+		<pre class="file" id="file9" style="display: none">package rules
 
 type List struct {
         *DoubleTransactionRule
         *HighFrequencySmallIntervalRule
+        *MerchantDenyList
 }
 
 func NewRulesList() *List <span class="cov8" title="1">{
         return &amp;List{
                 NewDoubleTransactionRule(),
                 NewHighFrequencySmallIntervalRule(),
+                NewMerchantDenyList(),
         }
 }</span>
 </pre>
