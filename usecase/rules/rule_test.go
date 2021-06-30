@@ -11,6 +11,11 @@ import (
 
 var timeTransaction = time.Date(2021, 07, 11, 10, 00, 00, 00, time.UTC)
 
+var jsonIn = []string{
+	"merchant-A",
+	"merchant-B",
+}
+
 type RulesSuite struct {
 	suite.Suite
 	*require.Assertions
@@ -39,12 +44,14 @@ func (s *RulesSuite) TestAuthorize() {
 	}
 
 	rules := NewRules()
-	err := rules.Authorize(transaction, []entity.Transaction{})
+	err := rules.Authorize(transaction, []entity.Transaction{}, jsonIn)
 
 	s.NoError(err)
 }
 
 func (s *RulesSuite) TestDoubleTransactionError() {
+
+
 	transaction := &entity.Transaction{
 		Merchant: "Burger King",
 		Amount:   110,
@@ -58,7 +65,8 @@ func (s *RulesSuite) TestDoubleTransactionError() {
 			Amount:   10,
 			Time:     timeTransaction,
 		},
-	})
+
+	}, jsonIn)
 
 	s.Error(err, "double-transaction")
 }
@@ -87,7 +95,7 @@ func (s *RulesSuite) TestHighFrequencySmallIntervalTransactionError() {
 			Amount:   10,
 			Time:     timeTransaction,
 		},
-	})
+	}, jsonIn)
 
 	s.Error(err, "high-frequency-small-interval")
 }

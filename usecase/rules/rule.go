@@ -8,7 +8,7 @@ type Rules struct {
 	rules *List
 }
 
-func (r *Rules) Authorize(transaction *entity.Transaction, trx []entity.Transaction) error {
+func (r *Rules) Authorize(transaction *entity.Transaction, trx []entity.Transaction, merchantDenyList []string) error {
 	err := r.rules.DoubleTransactionRule.Authorize(trx, transaction)
 
 	if err != nil {
@@ -16,6 +16,12 @@ func (r *Rules) Authorize(transaction *entity.Transaction, trx []entity.Transact
 	}
 
 	err = r.rules.HighFrequencySmallIntervalRule.Authorize(trx, transaction)
+
+	if err != nil {
+		return err
+	}
+
+	err = r.rules.MerchantDenyList.Authorize(merchantDenyList, transaction)
 
 	if err != nil {
 		return err

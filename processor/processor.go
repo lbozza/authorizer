@@ -10,6 +10,7 @@ import (
 type Input struct {
 	Account     *entity.Account     `json:"account"`
 	Transaction *entity.Transaction `json:"transaction"`
+	DenyList []string `json:"deny-list"`
 }
 
 type Output struct {

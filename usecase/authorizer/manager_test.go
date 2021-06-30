@@ -141,3 +141,23 @@ func (s *ManagerSuite) TestOperationManagerDoubleTransactionError() {
 
 	s.Error(err, "double-transaction")
 }
+
+func (s *ManagerSuite) TestOperationManager() {
+	jsonIn := []string{
+		"merchant-A",
+		"merchant-B",
+	}
+
+	account := entity.Account{
+		ActiveCard:     true,
+		AvaliableLimit: 100,
+	}
+
+	operationManager := NewOperationManager()
+	operationManager.CreateAccount(account)
+
+	_, err := operationManager.CreateDenyList(jsonIn)
+
+	s.NoError(err)
+
+}

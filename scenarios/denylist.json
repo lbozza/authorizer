@@ -1,0 +1,7 @@
+{"account": { "active-card": true, "available-limit": 1000 }}
+{"transaction": { "merchant": "merchant-A", "amount": 20, "time": "2019-02-13T10:00:00.000Z"}}
+{"transaction": { "merchant": "merchant-B", "amount": 30, "time": "2019-02-13T11:00:00.000Z"}}
+{"deny-list": ["merchant-A", "merchant-B"]}
+{"transaction": { "merchant": "merchant-A", "amount": 20, "time": "2019-02-13T12:00:00.000Z"}}
+{"deny-list": ["merchant-A"]}
+{"transaction": { "merchant": "merchant-B", "amount": 30, "time": "2019-02-13T13:00:00.000Z"}}
