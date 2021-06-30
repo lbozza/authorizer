@@ -2,7 +2,7 @@ package rules
 
 import (
 	"authorizer/entity"
-	"errors"
+	"authorizer/entity/violations"
 	"strings"
 	"time"
 )
@@ -23,7 +23,7 @@ func (d *DoubleTransactionRule) Authorize(trx []entity.Transaction, transaction 
 		if strings.Compare(o.Merchant, transaction.Merchant) == 0 {
 			duration := transaction.Time.Sub(o.Time)
 			if duration < timeLimit {
-				return errors.New("double-transaction")
+				return violations.ErrDoubleTransaction
 			}
 		}
 	}

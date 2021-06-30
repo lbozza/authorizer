@@ -2,7 +2,7 @@ package rules
 
 import (
 	"authorizer/entity"
-	"errors"
+	"authorizer/entity/violations"
 )
 
 type HighFrequencySmallIntervalRule struct {
@@ -20,7 +20,7 @@ func (d *HighFrequencySmallIntervalRule) Authorize(trx []entity.Transaction, tra
 		timeDiff := transaction.Time.Sub(trx[sizeList-3].Time)
 
 		if timeDiff < timeLimit {
-			return errors.New("high-frequency-small-interval")
+			return violations.ErrHighFrequencySmallInterval
 		}
 	}
 

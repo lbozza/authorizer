@@ -2,6 +2,7 @@ package authorizer
 
 import (
 	"authorizer/entity"
+	"authorizer/entity/violations"
 	"authorizer/usecase/rules"
 	"errors"
 )
@@ -27,7 +28,7 @@ func NewOperationManager() *OperationManager {
 func (m *OperationManager) CreateAccount(account entity.Account) (*entity.Account, error) {
 
 	if m.initialAccount != nil {
-		return m.initialAccount, errors.New("account-already-initialized")
+		return m.initialAccount, violations.ErrAccountAlreadyInitialized
 	}
 
 	m.initialAccount = &account
@@ -41,11 +42,11 @@ func (m *OperationManager) ProcessTransaction(transaction entity.Transaction) (*
 	}
 
 	if !m.initialAccount.ActiveCard {
-		return m.initialAccount, errors.New("card-not-active")
+		return m.initialAccount, violations.ErrCardNotActive
 	}
 
 	if !m.validateLimit(transaction) {
-		return m.initialAccount, errors.New("insufficient-limit")
+		return m.initialAccount, violations.ErrInsufficientLiit
 	}
 
 	rules := rules.NewRules()
