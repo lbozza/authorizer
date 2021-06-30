@@ -4,7 +4,6 @@ import (
 	"authorizer/entity"
 	"authorizer/entity/violations"
 	"authorizer/usecase/rules"
-	"errors"
 )
 
 //go:generate go run github.com/golang/mock/mockgen -package=authorizer -self_package=authorizer -destination=./manager_mock.go . Manager
@@ -38,7 +37,7 @@ func (m *OperationManager) CreateAccount(account entity.Account) (*entity.Accoun
 
 func (m *OperationManager) ProcessTransaction(transaction entity.Transaction) (*entity.Account, error) {
 	if !m.validateAccountState() {
-		return nil, errors.New("account-not-initialized")
+		return nil, violations.ErrAccountNotInitialized
 	}
 
 	if !m.initialAccount.ActiveCard {
@@ -63,7 +62,7 @@ func (m *OperationManager) ProcessTransaction(transaction entity.Transaction) (*
 
 func (m *OperationManager) CreateDenyList(denyList []string) (*entity.Account, error) {
 	if !m.validateAccountState() {
-		return m.initialAccount, errors.New("account-not-initialized")
+		return m.initialAccount, violations.ErrAccountNotInitialized
 	}
 
 	m.initialAccount.DenyList = denyList
